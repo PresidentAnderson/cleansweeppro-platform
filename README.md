@@ -2,6 +2,13 @@
 
 A comprehensive full-stack application for managing cleaning service businesses, including customer management, staff scheduling, service offerings, and appointment booking.
 
+## 🚀 Quick Links
+
+- **GitHub Repository**: https://github.com/PresidentAnderson/cleansweeppro-platform
+- **Quick Deploy Guide**: See [QUICK_DEPLOY.md](QUICK_DEPLOY.md)
+- **Detailed Deployment**: See [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Live Demo**: Deploy to Vercel in 5 minutes!
+
 ## Features
 
 ### Core Functionality
