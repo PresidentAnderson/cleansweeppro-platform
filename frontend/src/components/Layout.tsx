@@ -56,12 +56,12 @@ export default function Layout() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
                 <span className="text-primary-600 font-semibold">
-                  {user?.full_name?.charAt(0).toUpperCase()}
+                  {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.full_name}
+                  {user?.user_metadata?.full_name || 'User'}
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>

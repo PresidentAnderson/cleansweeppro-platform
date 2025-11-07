@@ -25,15 +25,11 @@ export default function Register() {
     setIsLoading(true)
 
     try {
-      await register({
-        email: formData.email,
-        password: formData.password,
-        full_name: formData.full_name,
-      })
+      await register(formData.email, formData.password, formData.full_name)
       toast.success('Account created successfully!')
       navigate('/')
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Failed to create account')
+      toast.error(error.message || 'Failed to create account')
     } finally {
       setIsLoading(false)
     }

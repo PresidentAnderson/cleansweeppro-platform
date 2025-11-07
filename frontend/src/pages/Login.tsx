@@ -7,7 +7,7 @@ export default function Login() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: '',
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -17,11 +17,11 @@ export default function Login() {
     setIsLoading(true)
 
     try {
-      await login(formData)
+      await login(formData.email, formData.password)
       toast.success('Welcome back!')
       navigate('/')
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Invalid credentials')
+      toast.error(error.message || 'Invalid credentials')
     } finally {
       setIsLoading(false)
     }
@@ -53,9 +53,9 @@ export default function Login() {
                 required
                 className="input"
                 placeholder="Email address"
-                value={formData.username}
+                value={formData.email}
                 onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
+                  setFormData({ ...formData, email: e.target.value })
                 }
               />
             </div>

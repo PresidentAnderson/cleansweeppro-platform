@@ -1,92 +1,104 @@
-import { create } from 'zustand';
-import { authApi } from '@/lib/api';
-import type { User, LoginCredentials, RegisterData } from '@/types';
+import { create } from 'zustand'
+import { supabase } from '@/lib/supabase'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface AuthState {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
-  loadUser: () => Promise<void>;
+  user: SupabaseUser | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, fullName: string) => Promise<void>
+  logout: () => Promise<void>
+  loadUser: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  token: localStorage.getItem('token'),
   isLoading: false,
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: false,
 
-  login: async (credentials: LoginCredentials) => {
-    set({ isLoading: true });
+  login: async (email: string, password: string) => {
+    set({ isLoading: true })
     try {
-      const response = await authApi.login(credentials);
-      localStorage.setItem('token', response.access_token);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-      const user = await authApi.getCurrentUser();
+      if (error) throw error
 
       set({
-        token: response.access_token,
-        user,
+        user: data.user,
         isAuthenticated: true,
         isLoading: false,
-      });
+      })
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      set({ isLoading: false })
+      throw error
     }
   },
 
-  register: async (data: RegisterData) => {
-    set({ isLoading: true });
+  register: async (email: string, password: string, fullName: string) => {
+    set({ isLoading: true })
     try {
-      await authApi.register(data);
-      // After registration, log the user in
-      await useAuthStore.getState().login({
-        username: data.email,
-        password: data.password,
-      });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      })
+
+      if (error) throw error
+
+      // Auto-login after registration
+      if (data.user) {
+        set({
+          user: data.user,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+      }
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      set({ isLoading: false })
+      throw error
     }
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
+  logout: async () => {
+    await supabase.auth.signOut()
     set({
       user: null,
-      token: null,
       isAuthenticated: false,
-    });
+    })
   },
 
   loadUser: async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      set({ isAuthenticated: false });
-      return;
-    }
-
-    set({ isLoading: true });
+    set({ isLoading: true })
     try {
-      const user = await authApi.getCurrentUser();
+      const { data: { user } } = await supabase.auth.getUser()
+
       set({
         user,
-        token,
-        isAuthenticated: true,
+        isAuthenticated: !!user,
         isLoading: false,
-      });
+      })
     } catch (error) {
-      localStorage.removeItem('token');
       set({
         user: null,
-        token: null,
         isAuthenticated: false,
         isLoading: false,
-      });
+      })
     }
   },
-}));
+}))
+
+// Listen to auth state changes
+supabase.auth.onAuthStateChange((_event, session) => {
+  useAuthStore.setState({
+    user: session?.user ?? null,
+    isAuthenticated: !!session?.user,
+  })
+})
