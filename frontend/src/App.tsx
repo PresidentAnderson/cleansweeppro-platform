@@ -21,7 +21,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { loadUser, isAuthenticated } = useAuthStore()
+  const { loadUser } = useAuthStore()
 
   useEffect(() => {
     loadUser()
