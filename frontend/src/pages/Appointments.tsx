@@ -52,25 +52,25 @@ export default function Appointments() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this appointment?')) {
       deleteMutation.mutate(id)
     }
   }
 
-  const getCustomerName = (id: number) => {
+  const getCustomerName = (id: string) => {
     const customer = customers?.find((c) => c.id === id)
     return customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown'
   }
 
-  const getStaffName = (id: number) => {
+  const getStaffName = (id: string) => {
     const staffMember = staff?.find((s) => s.id === id)
     return staffMember
       ? `${staffMember.first_name} ${staffMember.last_name}`
       : 'Unknown'
   }
 
-  const getServiceName = (id: number) => {
+  const getServiceName = (id: string) => {
     const service = services?.find((s) => s.id === id)
     return service?.name || 'Unknown'
   }
@@ -215,9 +215,9 @@ function AppointmentModal({
   }
 
   const [formData, setFormData] = useState({
-    customer_id: appointment?.customer_id.toString() || '',
-    staff_id: appointment?.staff_id.toString() || '',
-    service_id: appointment?.service_id.toString() || '',
+    customer_id: appointment?.customer_id || '',
+    staff_id: appointment?.staff_id || '',
+    service_id: appointment?.service_id || '',
     scheduled_date: formatDateForInput(appointment?.scheduled_date) || '',
     status: appointment?.status || 'scheduled',
     notes: appointment?.notes || '',
@@ -226,7 +226,7 @@ function AppointmentModal({
   const mutation = useMutation({
     mutationFn: (data: any) =>
       appointment
-        ? appointmentsApi.update(appointment.id, data)
+        ? appointmentsApi.update(appointment.id.toString(), data)
         : appointmentsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })
@@ -246,9 +246,9 @@ function AppointmentModal({
     e.preventDefault()
     const submitData = {
       ...formData,
-      customer_id: parseInt(formData.customer_id),
-      staff_id: parseInt(formData.staff_id),
-      service_id: parseInt(formData.service_id),
+      customer_id: formData.customer_id,
+      staff_id: formData.staff_id,
+      service_id: formData.service_id,
       scheduled_date: new Date(formData.scheduled_date).toISOString(),
     }
     mutation.mutate(submitData)

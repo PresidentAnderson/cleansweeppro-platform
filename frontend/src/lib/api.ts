@@ -1,179 +1,324 @@
-import axios from 'axios';
-import type {
-  User,
-  Customer,
-  Staff,
-  Service,
-  Appointment,
-  LoginCredentials,
-  RegisterData,
-  AuthResponse,
-} from '@/types';
+import { supabase } from './supabase'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Types
+export interface Customer {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  state: string
+  zip_code: string
+  notes?: string
+  created_at: string
+  updated_at?: string
+}
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+export interface Staff {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  address?: string
+  city?: string
+  state?: string
+  zip_code?: string
+  position: string
+  hourly_rate?: number
+  is_active: boolean
+  hire_date?: string
+  notes?: string
+  created_at: string
+  updated_at?: string
+}
 
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+export interface Service {
+  id: string
+  name: string
+  description?: string
+  price: number
+  duration_minutes: number
+  is_active: boolean
+  created_at: string
+  updated_at?: string
+}
 
-// Auth API
-export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const formData = new FormData();
-    formData.append('username', credentials.username);
-    formData.append('password', credentials.password);
+export type AppointmentStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
 
-    const response = await api.post<AuthResponse>('/auth/login', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  },
-
-  register: async (data: RegisterData): Promise<User> => {
-    const response = await api.post<User>('/auth/register', data);
-    return response.data;
-  },
-
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>('/auth/me');
-    return response.data;
-  },
-};
+export interface Appointment {
+  id: string
+  customer_id: string
+  staff_id: string
+  service_id: string
+  scheduled_date: string
+  end_date?: string
+  status: AppointmentStatus
+  notes?: string
+  internal_notes?: string
+  created_at: string
+  updated_at?: string
+}
 
 // Customers API
 export const customersApi = {
   getAll: async (): Promise<Customer[]> => {
-    const response = await api.get<Customer[]>('/customers/');
-    return response.data;
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
   },
 
-  getById: async (id: number): Promise<Customer> => {
-    const response = await api.get<Customer>(`/customers/${id}`);
-    return response.data;
+  getById: async (id: string): Promise<Customer> => {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  create: async (data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> => {
-    const response = await api.post<Customer>('/customers/', data);
-    return response.data;
+  create: async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> => {
+    const { data, error } = await supabase
+      .from('customers')
+      .insert([customer])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  update: async (id: number, data: Partial<Customer>): Promise<Customer> => {
-    const response = await api.put<Customer>(`/customers/${id}`, data);
-    return response.data;
+  update: async (id: string, customer: Partial<Customer>): Promise<Customer> => {
+    const { data, error } = await supabase
+      .from('customers')
+      .update(customer)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/customers/${id}`);
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
   },
-};
+}
 
 // Staff API
 export const staffApi = {
   getAll: async (activeOnly = false): Promise<Staff[]> => {
-    const response = await api.get<Staff[]>('/staff/', {
-      params: { active_only: activeOnly },
-    });
-    return response.data;
+    let query = supabase
+      .from('staff')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (activeOnly) {
+      query = query.eq('is_active', true)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return data || []
   },
 
-  getById: async (id: number): Promise<Staff> => {
-    const response = await api.get<Staff>(`/staff/${id}`);
-    return response.data;
+  getById: async (id: string): Promise<Staff> => {
+    const { data, error } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  create: async (data: Omit<Staff, 'id' | 'created_at' | 'updated_at'>): Promise<Staff> => {
-    const response = await api.post<Staff>('/staff/', data);
-    return response.data;
+  create: async (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>): Promise<Staff> => {
+    const { data, error } = await supabase
+      .from('staff')
+      .insert([staff])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  update: async (id: number, data: Partial<Staff>): Promise<Staff> => {
-    const response = await api.put<Staff>(`/staff/${id}`, data);
-    return response.data;
+  update: async (id: string, staff: Partial<Staff>): Promise<Staff> => {
+    const { data, error } = await supabase
+      .from('staff')
+      .update(staff)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/staff/${id}`);
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('staff')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
   },
-};
+}
 
 // Services API
 export const servicesApi = {
   getAll: async (activeOnly = false): Promise<Service[]> => {
-    const response = await api.get<Service[]>('/services/', {
-      params: { active_only: activeOnly },
-    });
-    return response.data;
+    let query = supabase
+      .from('services')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (activeOnly) {
+      query = query.eq('is_active', true)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return data || []
   },
 
-  getById: async (id: number): Promise<Service> => {
-    const response = await api.get<Service>(`/services/${id}`);
-    return response.data;
+  getById: async (id: string): Promise<Service> => {
+    const { data, error} = await supabase
+      .from('services')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  create: async (data: Omit<Service, 'id' | 'created_at' | 'updated_at'>): Promise<Service> => {
-    const response = await api.post<Service>('/services/', data);
-    return response.data;
+  create: async (service: Omit<Service, 'id' | 'created_at' | 'updated_at'>): Promise<Service> => {
+    const { data, error } = await supabase
+      .from('services')
+      .insert([service])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  update: async (id: number, data: Partial<Service>): Promise<Service> => {
-    const response = await api.put<Service>(`/services/${id}`, data);
-    return response.data;
+  update: async (id: string, service: Partial<Service>): Promise<Service> => {
+    const { data, error } = await supabase
+      .from('services')
+      .update(service)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/services/${id}`);
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('services')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
   },
-};
+}
 
 // Appointments API
 export const appointmentsApi = {
   getAll: async (filters?: {
-    customer_id?: number;
-    staff_id?: number;
-    status?: string;
-    start_date?: string;
-    end_date?: string;
+    customer_id?: string
+    staff_id?: string
+    status?: AppointmentStatus
+    start_date?: string
+    end_date?: string
   }): Promise<Appointment[]> => {
-    const response = await api.get<Appointment[]>('/appointments/', {
-      params: filters,
-    });
-    return response.data;
+    let query = supabase
+      .from('appointments')
+      .select('*')
+      .order('scheduled_date', { ascending: false })
+
+    if (filters?.customer_id) {
+      query = query.eq('customer_id', filters.customer_id)
+    }
+    if (filters?.staff_id) {
+      query = query.eq('staff_id', filters.staff_id)
+    }
+    if (filters?.status) {
+      query = query.eq('status', filters.status)
+    }
+    if (filters?.start_date && filters?.end_date) {
+      query = query
+        .gte('scheduled_date', filters.start_date)
+        .lte('scheduled_date', filters.end_date)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return data || []
   },
 
-  getById: async (id: number): Promise<Appointment> => {
-    const response = await api.get<Appointment>(`/appointments/${id}`);
-    return response.data;
+  getById: async (id: string): Promise<Appointment> => {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  create: async (
-    data: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<Appointment> => {
-    const response = await api.post<Appointment>('/appointments/', data);
-    return response.data;
+  create: async (appointment: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>): Promise<Appointment> => {
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([appointment])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  update: async (id: number, data: Partial<Appointment>): Promise<Appointment> => {
-    const response = await api.put<Appointment>(`/appointments/${id}`, data);
-    return response.data;
+  update: async (id: string, appointment: Partial<Appointment>): Promise<Appointment> => {
+    const { data, error } = await supabase
+      .from('appointments')
+      .update(appointment)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/appointments/${id}`);
-  },
-};
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('id', id)
 
-export default api;
+    if (error) throw error
+  },
+}
+
+export default supabase

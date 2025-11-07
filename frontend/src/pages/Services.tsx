@@ -31,7 +31,7 @@ export default function Services() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this service?')) {
       deleteMutation.mutate(id)
     }
@@ -148,7 +148,7 @@ function ServiceModal({
 
   const mutation = useMutation({
     mutationFn: (data: any) =>
-      service ? servicesApi.update(service.id, data) : servicesApi.create(data),
+      service ? servicesApi.update(service.id.toString(), data) : servicesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
       toast.success(

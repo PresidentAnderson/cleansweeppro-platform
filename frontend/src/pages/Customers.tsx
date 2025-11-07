@@ -31,7 +31,7 @@ export default function Customers() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this customer?')) {
       deleteMutation.mutate(id)
     }
@@ -143,7 +143,7 @@ function CustomerModal({
   const mutation = useMutation({
     mutationFn: (data: any) =>
       customer
-        ? customersApi.update(customer.id, data)
+        ? customersApi.update(customer.id.toString(), data)
         : customersApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })

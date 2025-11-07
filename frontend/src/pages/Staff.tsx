@@ -31,7 +31,7 @@ export default function StaffPage() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this staff member?')) {
       deleteMutation.mutate(id)
     }
@@ -152,7 +152,7 @@ function StaffModal({
 
   const mutation = useMutation({
     mutationFn: (data: any) =>
-      staff ? staffApi.update(staff.id, data) : staffApi.create(data),
+      staff ? staffApi.update(staff.id.toString(), data) : staffApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] })
       toast.success(
